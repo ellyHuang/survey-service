@@ -19,18 +19,18 @@ passport.use(
         {
             clientID: keys.googleClientID,
             clientSecret: keys.googleClientSecret,
-            callbackURL: '/auth/google/callback'
+            callbackURL: '/auth/google/callback',
+            scope: ['profile', 'email'],
+            proxy: true
         },
-        (accessToken, refreshToken, profile, done)=>{
-            User.findOne({ googleId:profile.id}).then((exsitingUser)=>{
-                if(exsitingUser){
-                    //this profile ID is already in the database
-                    done(null, exsitingUser);
-                }else{
-                    new User ({googleId: profile.id}).save().then(user=>{done(null, user)});
-                }
-            });
-        }
+        async (accessToken, refreshToken, profile, done)=>{
+            const exsitingUser = await User.findOne({ googleId:profile.id});
+            if (exsitingUser){
+                return done(null, exsitingUser);
+            }
+            const newUser = await new User({googleId: profile.id}).save()
+            done(null, newUser)
+        },
     )
 );
 
